@@ -8,6 +8,8 @@ export const login = async (req, res) => {
   try {
     // 1. Buscar al usuario
     const [rows] = await db.query('SELECT * FROM usuarios WHERE email = ?', [email]);
+
+    console.log('Usuario encontrado:', rows[0]); // <--- ESTO te dirá si el rol existe en la DB
     if (rows.length === 0) return res.status(401).json({ mensaje: 'Usuario no encontrado' });
 
     const usuario = rows[0];
@@ -17,9 +19,11 @@ export const login = async (req, res) => {
     if (!passwordCorrecto) return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
 
     // 3. Crear el Token (Corregido: añadida la JWT_SECRET)
-    const token = jwt.sign({ id: usuario.id, email: usuario.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: usuario.id, email: usuario.email, rol: usuario.rol }, process.env.JWT_SECRET, {
+      expiresIn: '1h',
+    });
 
-    res.json({ token });
+    res.json({ token, rol: usuario.rol });
   } catch (error) {
     console.error('DETALLE DEL ERROR:', error); // Esto imprimirá el error real en la terminal
     res.status(500).json({ mensaje: 'Error en el login' });

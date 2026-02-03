@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import productoRoutes from './src/routes/productoRoutes.js';
 import authRoutes from './src/routes/authRoutes.js';
+import path from 'path';
+
 const app = express();
 
 app.use(cors());
@@ -10,8 +12,11 @@ app.use(express.json());
 
 //Cualquier ruta que empiece con /api/productos, mandala al archivo de rutas
 
-app.use('/api/productos', productoRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/uploads', express.static('uploads'));
+app.use('/api/productos', productoRoutes);
+
+
 
 // Middleware personalizado: El "Vigilante"
 app.use((req, res, next) => {

@@ -23,6 +23,7 @@ const Login = ({ setToken }) => {
 
       if (res.ok) {
         localStorage.setItem('token', data.token);
+        localStorage.setItem('rol', data.rol);
         setToken(data.token); // Esto activa el cambio de pantalla en App.jsx
         navigate('/dashboard');
       }else{

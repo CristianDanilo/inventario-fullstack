@@ -8,9 +8,24 @@ export const verificarToken = (req, res, next) =>{
     
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.usuario = decoded;
+        req.user = decoded;
         next();
     } catch (error) {
         return res.status(401).json({mensaje : 'Token inválido o expirado'})
     }
 };
+
+export const esAdmin = (req, res, next) => {
+
+    if(!req.user){
+        return res.status(401).json({mensaje: 'No hay información de usuario' });
+    }
+    //Verificamos si el rol es 'admin'
+    if(req.user.rol !== 'admin'){
+        return res.status(403).json({
+            mensaje: 'Acceso denegado: Se requiere de administrador'
+        });
+    }
+    //Si todo está bien, pasamos a la siguiente funcion
+    next()
+}
