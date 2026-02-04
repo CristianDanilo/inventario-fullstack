@@ -3,11 +3,15 @@ import { useEffect, useState } from 'react';
 const Dashboard = ({ token, setToken }) => {
   const [productos, setProductos] = useState([]);
   const [nombre, setNombre] = useState('');
-  const [precio, setPrecio] = useState(0);
+  const [precio, setPrecio] = useState('');
   const [editarId, setEditarId] = useState(null);
   const rol = localStorage.getItem('rol');
-const [archivo, setArchivo] = useState(null);
-const [preview, setPreview] = useState(null);
+  const [archivo, setArchivo] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [descripcion, setDescripcion] = useState('');
+  const [origen, setOrigen] = useState('');
+  const [categoria, setCategoria] = useState('Grano');
+  const [stock, setStock] = useState('');
 
 
   const traerProductos = async () => {
@@ -22,7 +26,10 @@ const [preview, setPreview] = useState(null);
     const formData = new FormData();
     formData.append('nombre', nombre);
     formData.append('precio', precio);
-
+    formData.append('descripcion', descripcion);
+    formData.append('origen', origen);
+    formData.append('categoria', categoria);
+    formData.append('stock', stock);
     // Solo agregamos la imagen si el usuario seleccionó una
     if (archivo) {
       formData.append('imagen', archivo);
@@ -40,11 +47,7 @@ const [preview, setPreview] = useState(null);
     });
 
     if (res.ok) {
-      setNombre('');
-      setPrecio(0);
-      setArchivo(null);
-      setPreview(null);
-      setEditarId(null);
+      limpiarFormulario();
       traerProductos();
       alert('Producto guardado con éxito');
     } else {
@@ -52,6 +55,17 @@ const [preview, setPreview] = useState(null);
       alert('Error: ' + errorData.mensaje);
     }
   };
+const limpiarFormulario = () => {
+  setNombre('');
+  setPrecio('');
+  setArchivo(null);
+  setPreview(null);
+  setDescripcion('');
+  setOrigen('');
+  setCategoria('Grano');
+  setStock('');
+  setEditarId(null);
+};
   const eliminarProducto = async (id) => {
     await fetch(`http://localhost:3000/api/productos/${id}`, {
       method: 'DELETE',
@@ -116,18 +130,49 @@ const [preview, setPreview] = useState(null);
                 </div>
                 <div className='flex flex-col'>
                   <input
-                    className='p-3 m-2 border rounded-xl'
+                    className='w-full m-2 p-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500'
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
                     placeholder='Nombre'
                   />
+
                   <input
-                    className='p-3 m-2 border rounded-xl'
+                    className='w-full m-2 p-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500'
+                    value={origen}
+                    placeholder='Origen'
+                    onChange={(e) => setOrigen(e.target.value)}
+                  />
+                  <select
+                    value={categoria}
+                    onChange={(e) => setCategoria(e.target.value)}
+                    className='w-full m-2 p-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500'
+                  >
+                    <option value='Grano'>Grano</option>
+                    <option value='Molido'>Molido</option>
+                    <option value='Capsulas'>Cápsulas</option>
+                    <option value='Accesorios'>Accesorios</option>
+                  </select>
+                  <input
+                    className='w-full m-2 p-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500'
                     type='number'
                     value={precio}
                     placeholder='Precio'
                     onChange={(e) => setPrecio(e.target.value)}
                   />
+                  <input
+                    className='w-full m-2 p-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500'
+                    type='number'
+                    value={stock}
+                    placeholder='Cantidad EJ: 50'
+                    onChange={(e) => setStock(e.target.value)}
+                  />
+                  <textarea
+                    placeholder='Descripción del café (notas de sabor, altura...)'
+                    value={descripcion}
+                    onChange={(e) => setDescripcion(e.target.value)}
+                    className='w-full m-2 p-3 border rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500'
+                  />
+
                   <button
                     onClick={guardarProducto}
                     className='bg-blue-600 text-white m-2 px-6 py-3 rounded-xl font-bold'
@@ -145,39 +190,68 @@ const [preview, setPreview] = useState(null);
                     <th className='p-4'>Imagen</th>
                     <th className='p-4'>Producto</th>
                     <th className='p-4'>Precio</th>
+                    <th className='p-4'>Descripcion</th>
+                    <th className='p-4'>Origen</th>
+                    <th className='p-4'>Categoria</th>
+                    <th className='p-4'>Stock</th>
+
                     <th className='p-4 text-center'>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {productos.map((p) => (
-                    <tr key={p.id} className='border-t border-slate-100'>
+                    <tr key={p.id} className='border-t border-slate-100 hover:bg-slate-50 transition'>
                       <td className='p-4'>
                         {p.imagen ? (
                           <img
                             src={`http://localhost:3000/uploads/${p.imagen}`}
-                            alt='p.nombre'
-                            className='w-12 h-12 rounded-lg object-cover border'
-                          ></img>
+                            alt={p.nombre}
+                            className='w-12 h-12 rounded-lg object-cover border shadow-sm'
+                          />
                         ) : (
                           <div className='w-12 h-12 bg-slate-200 rounded-lg flex items-center justify-center text-[10px] text-slate-400'>
                             Sin foto
                           </div>
                         )}
                       </td>
-                      <td className='p-4 font-semibold'>{p.nombre}</td>
-                      <td className='p-4 text-green-600'>${p.precio}</td>
+                      <td className='p-4 font-semibold text-slate-700'>{p.nombre}</td>
+                      <td className='p-4 text-green-600 font-medium'>${p.precio}</td>
+                      <td className='p-4 text-slate-600 text-sm truncate max-w-[150px]'>{p.descripcion}</td>
+                      <td className='p-4 text-slate-600'>{p.origen}</td>
+                      <td className='p-4'>
+                        <span className='px-2 py-1 bg-amber-100 text-amber-800 rounded-md text-xs font-bold'>
+                          {p.categoria}
+                        </span>
+                      </td>
+                      <td className='p-4 font-mono'>
+                        {/* 🔥 Mejora: Color rojo si hay poco stock */}
+                        <span className={p.stock < 5 ? 'text-red-500 font-bold' : 'text-slate-700'}>{p.stock}</span>
+                      </td>
                       <td className='p-4 text-center'>
-                        <button
-                          onClick={() => {
-                            setEditarId(p.id);
-                            setNombre(p.nombre);
-                            setPrecio(p.precio);
-                          }}
-                          className='mr-2'
-                        >
-                          ✏️
-                        </button>
-                        <button onClick={() => eliminarProducto(p.id)}>🗑️</button>
+                        <div className='flex justify-center gap-2'>
+                          <button
+                            onClick={() => {
+                              setEditarId(p.id);
+                              setNombre(p.nombre);
+                              setPrecio(p.precio);
+                              setDescripcion(p.descripcion);
+                              setOrigen(p.origen);
+                              setCategoria(p.categoria);
+                              setStock(p.stock);
+                              // Opcional: mostrar la imagen actual como preview
+                              setPreview(`http://localhost:3000/uploads/${p.imagen}`);
+                            }}
+                            className='p-2 hover:bg-blue-50 rounded-lg transition'
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => eliminarProducto(p.id)}
+                            className='p-2 hover:bg-red-50 rounded-lg transition'
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

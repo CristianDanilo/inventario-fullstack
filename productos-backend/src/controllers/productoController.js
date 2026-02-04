@@ -15,21 +15,20 @@ export const getProductos = async (req, res) =>{
 //Funcion para crear
 export const crearproducto = async (req, res) => {
   try {
-    const { nombre, precio } = req.body;
+    const { nombre, precio, descripcion, origen, categoria, stock } = req.body;
     // req.file viene gracias a Multer. Tomamos el filename generado.
     const imagenUrl = req.file ? req.file.filename : null;
 
-    if (!nombre || isNaN(precio) || precio < 0) {
+    if (!nombre || isNaN(precio) || precio < 0 || stock < 0) {
       return res.status(400).json({ mensaje: 'Datos inválidos' });
     }
 
-    const [result] = await db.query('INSERT INTO productos (nombre, precio, imagen) VALUES (?, ?, ?)', [
-      nombre,
-      precio,
-      imagenUrl,
-    ]);
+    const [result] = await db.query(
+      'INSERT INTO productos (nombre, precio, imagen, descripcion, origen, categoria, stock) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [nombre, precio, imagenUrl, descripcion, origen, categoria, stock || 0]
+    );
 
-    res.status(201).json({ id: result.insertId, nombre, precio, imagenUrl });
+    res.status(201).json({ id: result.insertId, nombre, precio, imagenUrl, descripcion, origen, categoria, stock });
   } catch (error) {
     console.error(error); // Siempre es bueno ver el error real en consola
     res.status(500).json({ mensaje: 'Error al crear producto' });
@@ -39,18 +38,18 @@ export const crearproducto = async (req, res) => {
 export const updateProducto = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, precio } = req.body;
+    const { nombre, precio, descripcion, origen, categoria, stock } = req.body;
 
     // 1. Verificamos si subieron una nueva imagen
     const nuevaImagen = req.file ? req.file.filename : null;
 
-    let query = 'UPDATE productos SET nombre = ?, precio = ? WHERE id = ?';
-    let params = [nombre, precio, id];
+    let query = 'UPDATE productos SET nombre = ?, precio = ?, descripcion = ?, origen = ?, categoria = ?, stock = ? WHERE id = ?';
+    let params = [nombre, precio, descripcion, origen, categoria, stock,id];
 
     // 2. Si hay nueva imagen, la incluimos en la query
     if (nuevaImagen) {
-      query = 'UPDATE productos SET nombre = ?, precio = ?, imagen = ? WHERE id = ?';
-      params = [nombre, precio, nuevaImagen, id];
+      query = 'UPDATE productos SET nombre = ?, precio = ?, imagen = ?, descripcion = ?, origen = ?, categoria = ?, stock = ? WHERE id = ?';
+      params = [nombre, precio, nuevaImagen, descripcion, origen, categoria, stock, id];
     }
 
     const [result] = await db.query(query, params);
