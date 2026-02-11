@@ -1,76 +1,59 @@
-//recibe las peticiones req y envia las respuesta res
-import db from '../config/db.js'
+import * as productRepo from '../repositories/productRepository.js';
+import * as crearProductoUC from '../usecases/crearProductoUseCase.js';
+import * as updateProductoUC from '../usecases/updateProductoUseCase.js';
 
-//Función para obtener todos
-
-export const getProductos = async (req, res) =>{
-    try {
-        const [rows] = await db.query('SELECT * FROM productos');
-        res.json(rows);
-    } catch (error) {
-        res.status(500).json({ mensaje: 'Error al leer productos'});
-    }
-};
-
-//Funcion para crear
-export const crearproducto = async (req, res) => {
+export const getProductos = async (req, res) => {
   try {
-    const { nombre, precio, descripcion, origen, categoria, stock } = req.body;
-    // req.file viene gracias a Multer. Tomamos el filename generado.
-    const imagenUrl = req.file ? req.file.filename : null;
-
-    if (!nombre || isNaN(precio) || precio < 0 || stock < 0) {
-      return res.status(400).json({ mensaje: 'Datos inválidos' });
-    }
-
-    const [result] = await db.query(
-      'INSERT INTO productos (nombre, precio, imagen, descripcion, origen, categoria, stock) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [nombre, precio, imagenUrl, descripcion, origen, categoria, stock || 0]
-    );
-
-    res.status(201).json({ id: result.insertId, nombre, precio, imagenUrl, descripcion, origen, categoria, stock });
+    const productos = await productRepo.findAll();
+    res.json(productos);
   } catch (error) {
-    console.error(error); // Siempre es bueno ver el error real en consola
-    res.status(500).json({ mensaje: 'Error al crear producto' });
+    res.status(500).json({ mensaje: 'Error al leer productos' });
   }
 };
-// Actualizar
+
+export const crearproducto = async (req, res) => {
+  try {
+    const datos = {
+      ...req.body,
+      imagen: req.file ? req.file.filename : null,
+      precio: parseFloat(req.body.precio),
+      stock: parseInt(req.body.stock),
+    };
+
+    const resultado = await crearProductoUC.ejecutar(datos);
+    res.status(201).json(resultado);
+  } catch (error) {
+    res.status(400).json({ mensaje: error.message });
+  }
+};
+
+export const deleteProducto = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const eliminado = await productRepo.remove(id);
+    if (!eliminado) return res.status(404).json({ mensaje: 'No encontrado' });
+    res.json({ mensaje: 'Eliminado con éxito' });
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al eliminar' });
+  }
+};
+
 export const updateProducto = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nombre, precio, descripcion, origen, categoria, stock } = req.body;
 
-    // 1. Verificamos si subieron una nueva imagen
-    const nuevaImagen = req.file ? req.file.filename : null;
+    // Preparamos los datos que vienen del body
+    const datosAActualizar = { ...req.body };
 
-    let query = 'UPDATE productos SET nombre = ?, precio = ?, descripcion = ?, origen = ?, categoria = ?, stock = ? WHERE id = ?';
-    let params = [nombre, precio, descripcion, origen, categoria, stock,id];
-
-    // 2. Si hay nueva imagen, la incluimos en la query
-    if (nuevaImagen) {
-      query = 'UPDATE productos SET nombre = ?, precio = ?, imagen = ?, descripcion = ?, origen = ?, categoria = ?, stock = ? WHERE id = ?';
-      params = [nombre, precio, nuevaImagen, descripcion, origen, categoria, stock, id];
+    // Si Multer subió una imagen nueva, la añadimos a los datos
+    if (req.file) {
+      datosAActualizar.imagen = req.file.filename;
     }
 
-    const [result] = await db.query(query, params);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ mensaje: 'Producto no encontrado' });
-    }
-    res.json({ mensaje: 'Producto actualizado con éxito' });
+    const resultado = await updateProductoUC.ejecutar(id, datosAActualizar);
+    res.json(resultado);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al actualizar' });
+    console.error(error);
+    res.status(400).json({ mensaje: error.message });
   }
 };
-
-//Función para eliminar
-export const deleteProducto = async (req,res) =>{
-    try {
-            const { id } = req.params;
-            await db.query('DELETE FROM productos WHERE id = ?', [id]);
-            res.json({ mensaje: 'Eliminado con éxito' });
-    } catch (error) {
-        res.status(500).json({mensaje: 'Error al eliminar'})
-    }
-
-}
